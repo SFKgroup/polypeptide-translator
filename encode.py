@@ -1,5 +1,5 @@
-def encoding(key):
-    ret = {}
+def __init__():
+    global point,path,dic
     point = {'A' : [[1, 'C', 0.000000, -0.000000, 0.000000, 0], [2, 'N', -0.821020, -0.006354, 0.000000, 0], [3, 'H', -1.601020, -0.006354, 0.000000, 0, 'VAL=1'], [4, 'H', -0.821020, -0.786354, 0.000000, 0, 'VAL=1'], [5, 'O', 0.779999, 0.779999, 0.000000, 0], [6, 'C', 0.779999, -0.000000, 0.000000, 0], [7, 'O', 1.559999, -0.000000, 0.000000, 0, 'HCOUNT=1'], [8, 'C', -0.000000, -0.779999, 0.000000, 0, 'HCOUNT=3'], [9, 'H', -0.003147, 0.779993, 0.000000, 0, 'VAL=1']],
             'S' : [[1, 'C', 0.000000, -0.000000, 0.000000, 0], [2, 'N', -0.821020, -0.006354, 0.000000, 0], [3, 'H', -1.601020, -0.006354, 0.000000, 0, 'VAL=1'], [4, 'H', -0.821020, -0.786354, 0.000000, 0, 'VAL=1'], [5, 'O', 0.779999, 0.779999, 0.000000, 0], [6, 'C', 0.779999, -0.000000, 0.000000, 0], [7, 'O', 1.559999, -0.000000, 0.000000, 0, 'HCOUNT=1'], [8, 'H', -0.003147, 0.779993, 0.000000, 0, 'VAL=1'], [9, 'C', -0.000000, -0.779999, 0.000000, 0, 'HCOUNT=2'], [10, 'O', 0.779999, -0.779999, 0.000000, 0, 'HCOUNT=1']],
             'L' : [[1, 'C', 0.000000, -0.000000, 0.000000, 0], [2, 'N', -0.821020, -0.006354, 0.000000, 0], [3, 'H', -1.601020, -0.006354, 0.000000, 0, 'VAL=1'], [4, 'H', -0.821020, -0.786354, 0.000000, 0, 'VAL=1'], [5, 'O', 0.779999, 0.779999, 0.000000, 0], [6, 'C', 0.779999, -0.000000, 0.000000, 0], [7, 'O', 1.559999, -0.000000, 0.000000, 0, 'HCOUNT=1'], [8, 'H', -0.003147, 0.779993, 0.000000, 0, 'VAL=1'], [9, 'C', -0.672859, -2.130937, 0.000000, 0, 'HCOUNT=3'], [10, 'C', 0.002640, -1.740937, 0.000000, 0, 'HCOUNT=1'], [11, 'C', 0.678140, -2.130937, 0.000000, 0, 'HCOUNT=3'], [12, 'C', -0.000000, -0.779999, 0.000000, 0, 'HCOUNT=2']],
@@ -44,6 +44,10 @@ def encoding(key):
         'CUU':'L','CUC':'L','CUA':'L','CUG':'L','CCU':'P','CCC':'P','CCA':'P','CCG':'P','CAU':'H','CAC':'H','CAA':'Q','CAG':'Q','CGU':'R','CGC':'R','CGA':'R','CGG':'R',
         'AUU':'I','AUC':'I','AUA':'I','AUG':'M','ACU':'T','ACC':'T','ACA':'T','ACG':'T','AAU':'N','AAC':'N','AAA':'K','AAG':'K','AGU':'S','AGC':'S','AGA':'R','AGG':'R',
         'GUU':'V','GUC':'V','GUA':'V','GUG':'V','GCU':'A','GCC':'A','GCA':'A','GCG':'A','GAU':'D','GAC':'D','GAA':'E','GAG':'E','GGU':'G','GGC':'G','GGA':'G','GGG':'G'}
+
+def encoding(key):
+    global point,path,dic
+    ret = {}
     num = int(str(key.encode('utf-8').hex()),16)
     cd4 = ''
     while num != 0:
@@ -252,6 +256,230 @@ def encoding(key):
     grand.close()
     return ret
 
+def long_encoding(key):
+    global point,path,dic
+    ret = {}
+    num = int(str(key.encode('utf-8').hex()),16)
+    cd4 = ''
+    while num != 0:
+        cd4 = str(num%4) + cd4
+        num = num // 4
+    code = cd4.replace('0','U').replace('1','C').replace('2','A').replace('3','G')
+    if len(code)%3 != 0:code = 'U'*(3-(len(code)%3)) + code
+    code = 'AUG' + code
+    mrna = ''
+    rna  = ''
+    moremrna = ''
+    for i in range(len(code)//3):
+        if dic[code[i*3:(i+1)*3]] == '.':
+            piece = code[i*3:(i+1)*3].replace('U','u').replace('A','a').replace('G','g').replace('C','c').replace('u','A').replace('a','U').replace('g','C').replace('c','G')
+            moremrna = moremrna + 'A'
+        elif code[i*3:(i+1)*3] in ['AUU','AUC','ACU']:
+            piece = code[i*3:(i+1)*3]
+            moremrna = moremrna + 'C'
+        else:piece = code[i*3:(i+1)*3]
+        mrna = mrna + piece
+    if len(moremrna)%3 != 0:moremrna = 'G'*(3-(len(moremrna)%3)) + moremrna
+    polymrna = mrna + moremrna
+    latemrna = 'UU' + polymrna[3:] + 'U'
+    mrna = polymrna + latemrna
+    out  = ''
+    for i in range(len(mrna)//3):
+        piece = mrna[i*3:(i+1)*3]
+        out = out + dic[piece]
+    mrna = mrna + 'UAG'
+    rna = mrna.replace('U','u').replace('A','a').replace('G','g').replace('C','c').replace('u','A').replace('a','U').replace('g','C').replace('c','G')
+    dna = [rna.replace('U','T'),mrna.replace('U','T')[::-1]]
+    if len(out) < 2:raise Exception("Input is too short to translate.",key)
+    ret['DeoxyriboNucleic Acid'] = dna
+    ret['Messenger Ribonucleic Acid'] = mrna
+    #out = 'FLSYCIMVPTAHQNKDERSG'
+    chempoint = []
+    chempath  = []
+    connect   = []
+    connected = []
+    if out[0] == 'P':
+        k = 0
+        dy = {}
+        for data in point['P']:
+            if data[0] == 3:
+                connect.append(str(k-1))
+            else:
+                k += 1
+                dy[data[0]]=k
+                if len(data) == 7:chempoint.append(str(k)+' '+str(data[1])+' '+str(data[2])+' '+str(data[3])+' '+str(data[4])+' '+str(data[5])+' '+data[6])
+                elif len(data) == 6:chempoint.append(str(k)+' '+str(data[1])+' '+str(data[2])+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+        k = 0
+        for pth in path['P']:
+            if 3 == pth[2] or 3 == pth[3]:pass
+            else:
+                k += 1
+                p2 = dy[pth[2]]
+                p3 = dy[pth[3]]
+                chempath.append(str(k)+' '+str(pth[1])+' '+str(p2)+' '+str(p3))
+    else:
+        k = 0
+        af = 7
+        add = 0
+        if out[0] == 'H':af = 12
+        if out[0] == 'E' or out[0] == 'Q' or out[0] == 'R':
+            af = 4
+            add = -1
+        dy = {}
+        for data in point[out[0]]:
+            if data[0] == af:
+                connect.append(str(k+add))
+            else:
+                k += 1
+                dy[data[0]]=k
+                if len(data) == 7:chempoint.append(str(k)+' '+str(data[1])+' '+str(data[2])+' '+str(data[3])+' '+str(data[4])+' '+str(data[5])+' '+data[6])
+                elif len(data) == 6:chempoint.append(str(k)+' '+str(data[1])+' '+str(data[2])+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+        k = 0
+        for pth in path[out[0]]:
+            if af == pth[2] or af == pth[3]:pass
+            else:
+                k += 1
+                p2 = dy[pth[2]]
+                p3 = dy[pth[3]]
+                chempath.append(str(k)+' '+str(pth[1])+' '+str(p2)+' '+str(p3))
+    count = 0
+    for n in out[1:-1]:
+        count += 1
+        basepath = len(chempath)
+        basepoint = len(chempoint)
+        if n == 'P':
+            k = 0
+            dy = {}
+            for data in point['P']:
+                if data[0] == 3:
+                    connect.append(str(k+basepoint-1))
+                elif data[0] == 5:
+                    k += 1
+                    dy[data[0]]=k+basepoint
+                    chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+                    connected.append([connect.pop(0),k+basepoint])
+                else:
+                    k += 1
+                    dy[data[0]]=k+basepoint
+                    if len(data) == 7:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5])+' '+data[6])
+                    elif len(data) == 6:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+            k = 0
+            for pth in path['P']:
+                if 3 == pth[2] or 3 == pth[3]:pass
+                else:
+                    k += 1
+                    p2 = dy[pth[2]]
+                    p3 = dy[pth[3]]
+                    chempath.append(str(k+basepath)+' '+str(pth[1])+' '+str(p2)+' '+str(p3))
+        else:
+            bf = 3
+            af = 7
+            add = 0
+            if n == 'H':
+                af = 12
+                bf = 8
+            if n == 'E' or n == 'Q' or n == 'R':
+                bf = 6
+                af = 4
+                add = -1
+            k = 0
+            dy = {}
+            for data in point[n]:
+                if data[0] == af:
+                    connect.append(str(k+basepoint+add))
+                elif data[0] == bf:connected.append([connect.pop(0),k+basepoint])
+                else:
+                    k += 1
+                    dy[data[0]]=k+basepoint
+                    if len(data) == 7:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5])+' '+data[6])
+                    elif len(data) == 6:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+            k = 0
+            for pth in path[n]:
+                if af == pth[2] or af == pth[3] or bf == pth[2] or bf == pth[3]:pass
+                else:
+                    k += 1
+                    p2 = dy[pth[2]]
+                    p3 = dy[pth[3]]
+                    chempath.append(str(k+basepath)+' '+str(pth[1])+' '+str(p2)+' '+str(p3))
+    basepath = len(chempath)
+    basepoint = len(chempoint)
+    #print(basepath)
+    count += 1
+    if out[-1] == 'P':
+        k = 0
+        dy = {}
+        for data in point['P']:
+            if data[0] == 5:
+                k += 1
+                dy[data[0]]=k+basepoint
+                chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+                connected.append([connect.pop(0),k+basepoint])
+            else:
+                k += 1
+                dy[data[0]]=k+basepoint
+                if len(data) == 7:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5])+' '+data[6])
+                elif len(data) == 6:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+        k = 0
+        for pth in path['P']:
+            k += 1
+            p2 = dy[pth[2]]
+            p3 = dy[pth[3]]
+            chempath.append(str(k+basepath)+' '+str(pth[1])+' '+str(p2)+' '+str(p3))
+
+    else:
+        bf = 3
+        if out[-1] == 'H':bf = 8
+        if out[-1] == 'E' or out[-1] == 'Q' or out[-1] == 'R':bf = 6
+        k = 0
+        dy = {}
+        for data in point[out[-1]]:
+            if data[0] == bf:connected.append([connect.pop(0),k+basepoint])
+            else:
+                k += 1
+                dy[data[0]]=k+basepoint
+                if len(data) == 7:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5])+' '+data[6])
+                elif len(data) == 6:chempoint.append(str(k+basepoint)+' '+str(data[1])+' '+str(round(data[2]+2.4*count,6))+' '+str(data[3])+' '+str(data[4])+' '+str(data[5]))
+        k = 0
+        for pth in path[out[-1]]:
+            if bf == pth[2] or bf == pth[3]:pass
+            else:
+                k += 1
+                p2 = dy[pth[2]]
+                p3 = dy[pth[3]]
+                chempath.append(str(k+basepath)+' '+str(pth[1])+' '+str(p2)+' '+str(p3))
+    basepath = len(chempath)
+    for k,num in zip(range(1,len(connected)+1,1),connected):chempath.append(str(k+basepath)+' 1 '+str(num[0])+' '+str(num[1]))
+
+    grand = open('./'+str(key)+'_lt.mol','w')
+    grand.write(''' \nKingDraw2D\n\n  0  0  0     0  0              0 V3000\nM  V30 BEGIN CTAB\n''')
+    grand.write('M  V30 COUNTS '+str(len(chempoint))+' '+str(len(chempath))+' 0 0 0\n')
+    grand.write('M  V30 BEGIN ATOM\n')
+    for d in chempoint:grand.write('M  V30 '+d+'\n')
+    grand.write('M  V30 END ATOM\nM  V30 BEGIN BOND\n')
+    for d in chempath:grand.write('M  V30 '+d+'\n')
+    grand.write('M  V30 END BOND\nM  V30 END CTAB\nM  END\n')
+    grand.close()
+    counting = {'H':0,'C':0}
+    for d in chempoint:
+        im = d.split(' ')
+        try:
+            if len(im) == 7 and 'H' in im[6]:counting['H']+=int(im[6][-1:])
+            counting[im[1]] += 1
+        except:counting[im[1]] = 1
+    chem = ''
+    for kkey in counting.keys():
+        chem = chem + kkey+ str(counting[kkey]) + ' '
+    ret['Chemical formula'] = chem
+    poly = ''
+    for d in out:poly = poly + d + '-'
+    ret['polypeptide'] = poly[:-1]
+    grand = open('./'+str(key)+'_ld.txt','w')
+    for rekey in ret.keys():grand.write(rekey + (27-len(rekey))*' ' + ' : ' + str(ret[rekey]).replace("'","").replace('[','').replace(']','') + '\n')
+    grand.close()
+    return ret
+
+
 if __name__ == '__main__':
-    res = encoding(input())
+    __init__()
+    res = long_encoding(input())
     for rekey in res.keys():print(rekey,res[rekey])
